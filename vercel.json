@@ -1,0 +1,12 @@
+{
+    "cleanUrls": true,
+    "headers": [
+      {
+        "source": "/:file.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-store" }
+        ]
+      }
+    ]
+  }
+  
