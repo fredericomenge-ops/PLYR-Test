@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teste Plyr - YouTube Live (ghPlI5Qd24s)</title>
+
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        margin: 0; padding: 2rem; background: #0f172a; color: #e2e8f0;
+        display: grid; place-items: center; min-height: 100vh;
+      }
+      .wrap { width: min(1000px, 95vw); }
+      h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem; opacity: .9; }
+      .card {
+        background: #111827; border-radius: 16px; padding: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        border: 1px solid rgba(255,255,255,.06);
+      }
+      .note { font-size: .9rem; opacity: .8; margin-top: .75rem; }
+      a { color: #93c5fd; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Teste Plyr com transmissão ao vivo do YouTube</h1>
+      <div class="card">
+        <!-- Player embedado -->
+        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="ghPlI5Qd24s"></div>
+        <p class="note">Este teste usa um link de live (<code>https://www.youtube.com/live/ghPlI5Qd24s</code>). Clique no botão de play do player para iniciar a reprodução. Autoplay está desativado.</p>
+      </div>
+    </div>
+
+    <!-- Plyr JS -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script>
+      const player = new Plyr('#player', {
+        controls: [
+          'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
+          'settings', 'pip', 'airplay', 'fullscreen'
+        ],
+        youtube: {
+          rel: 0,
+          modestbranding: 1
+        }
+      });
+
+      // Log de eventos para depuração
+      const events = ['ready', 'play', 'pause', 'ended', 'error'];
+      events.forEach(e => player.on(e, () => console.log(`[EVENTO] ${e}`)));
+
+      window.player = player;
+    </script>
+  </body>
+</html>
