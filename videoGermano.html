@@ -4,49 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Plyr com post-roll (YouTube)</title>
-
-  <!-- CSS do Plyr -->
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 </head>
 <body style="background:#111; display:flex; align-items:center; justify-content:center; height:100vh;">
 
   <div class="plyr__video-embed" id="player" style="width:80%; max-width:900px;">
     <iframe
-      src="https://www.youtube.com/embed/0pdqf4P9MB8?origin=*&playsinline=1"
+      src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
       allowfullscreen
       allow="autoplay"
     ></iframe>
   </div>
 
-  <!-- JS do Plyr -->
   <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
   <script>
-    // cria o player
-    const player = new Plyr('#player', { youtube: { rel: 0, modestbranding: 1 } });
+    const player = new Plyr('#player', {
+      youtube: { rel: 0, modestbranding: 1 },
+      autoplay: true,
+      muted: false,
+    });
 
-    // IDs dos vídeos (YouTube)
     const videos = [
-      '0pdqf4P9MB8', // principal
-      '_lwMF0F_Amw'  // "ad"
+      '0pdqf4P9MB8', // vídeo principal
+      '_lwMF0F_Amw'  // anúncio
     ];
 
     let currentIndex = 0;
+    let isChanging = false;
 
-    // quando o vídeo atual terminar, troca para o próximo
     player.on('ended', () => {
+      if (isChanging) return;
       currentIndex++;
       if (currentIndex < videos.length) {
+        isChanging = true;
         const nextId = videos[currentIndex];
+
+        // Troca a fonte do vídeo
         player.source = {
           type: 'video',
-          sources: [{
-            src: nextId,
-            provider: 'youtube'
-          }]
+          sources: [{ src: nextId, provider: 'youtube' }]
         };
-        player.play();
+
+        // Espera o Plyr inicializar o novo vídeo antes de tocar
+        player.once('ready', () => {
+          // ⚠️ Truque para contornar bloqueio de autoplay
+          player.muted = true;
+          player.play().then(() => {
+            player.muted = false;
+            isChanging = false;
+          }).catch(err => {
+            console.warn('Autoplay bloqueado:', err);
+            isChanging = false;
+          });
+        });
       } else {
-        console.log('Todos os vídeos terminaram');
+        console.log('Todos os vídeos concluídos.');
       }
     });
   </script>
