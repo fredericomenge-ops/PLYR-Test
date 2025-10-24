@@ -4,11 +4,44 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Plyr com post-roll (YouTube)</title>
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-</head>
-<body style="background:#111; display:flex; align-items:center; justify-content:center; height:100vh;">
 
-  <div class="plyr__video-embed" id="player" style="width:80%; max-width:900px;">
+  <!-- CSS do Plyr -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+
+  <style>
+    body {
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Contêiner fixo do player */
+    #player {
+      width: 960px;     /* largura fixa */
+      height: 540px;    /* altura fixa (16:9 padrão) */
+      background: black;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Força o iframe a ocupar o contêiner */
+    #player iframe {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Cor principal do player */
+    :root {
+      --plyr-color-main: #25B895; /* verde BP */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="plyr__video-embed" id="player">
     <iframe
       src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
       allowfullscreen
@@ -16,6 +49,7 @@
     ></iframe>
   </div>
 
+  <!-- JS do Plyr -->
   <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
   <script>
     const player = new Plyr('#player', {
@@ -39,15 +73,14 @@
         isChanging = true;
         const nextId = videos[currentIndex];
 
-        // Troca a fonte do vídeo
+        // troca a fonte do vídeo
         player.source = {
           type: 'video',
           sources: [{ src: nextId, provider: 'youtube' }]
         };
 
-        // Espera o Plyr inicializar o novo vídeo antes de tocar
+        // aguarda estar pronto e dá play
         player.once('ready', () => {
-          // ⚠️ Truque para contornar bloqueio de autoplay
           player.muted = true;
           player.play().then(() => {
             player.muted = false;
