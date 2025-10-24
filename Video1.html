@@ -1,121 +1,54 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Teste Plyr - Contagem de View YouTube (com monitoramento)</title>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plyr com post-roll (YouTube)</title>
 
-    <!-- Plyr CSS -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <!-- CSS do Plyr -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+</head>
+<body style="background:#111; display:flex; align-items:center; justify-content:center; height:100vh;">
 
-    <style>
-      :root { --brand:#2563eb; }
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-        margin: 0; padding: 2rem; background: #0f172a; color: #e2e8f0;
-        display: grid; place-items: center; min-height: 100vh;
+  <div class="plyr__video-embed" id="player" style="width:80%; max-width:900px;">
+    <iframe
+      src="https://www.youtube.com/embed/0pdqf4P9MB8?origin=*&playsinline=1"
+      allowfullscreen
+      allow="autoplay"
+    ></iframe>
+  </div>
+
+  <!-- JS do Plyr -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script>
+    // cria o player
+    const player = new Plyr('#player', { youtube: { rel: 0, modestbranding: 1 } });
+
+    // IDs dos vídeos (YouTube)
+    const videos = [
+      '0pdqf4P9MB8', // principal
+      '_lwMF0F_Amw'  // "ad"
+    ];
+
+    let currentIndex = 0;
+
+    // quando o vídeo atual terminar, troca para o próximo
+    player.on('ended', () => {
+      currentIndex++;
+      if (currentIndex < videos.length) {
+        const nextId = videos[currentIndex];
+        player.source = {
+          type: 'video',
+          sources: [{
+            src: nextId,
+            provider: 'youtube'
+          }]
+        };
+        player.play();
+      } else {
+        console.log('Todos os vídeos terminaram');
       }
-      .wrap { width: min(1000px, 95vw); }
-      h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem; opacity: .9; }
-      .grid { display: grid; gap: 1rem; grid-template-columns: 2fr 1fr; align-items: start; }
-      .card {
-        background: #111827; border-radius: 16px; padding: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.25);
-        border: 1px solid rgba(255,255,255,.06);
-      }
-      .note { font-size: .9rem; opacity: .8; margin-top: .75rem; }
-      a { color: #93c5fd; }
-      .logbox { max-height: 460px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }
-      .pill {
-        display:inline-block; padding:.25rem .5rem; border-radius:999px; background:#0b1220; border:1px solid rgba(255,255,255,.1); margin-left:.5rem;
-      }
-      .ok { color:#a7f3d0; border-color:rgba(16,185,129,.35); }
-      .warn { color:#fde68a; border-color:rgba(245,158,11,.35); }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <h1>Teste de contagem de views no YouTube via Plyr <span class="pill warn">sem autoplay</span> <span id="qualif" class="pill">≥ 30s: aguardando…</span></h1>
-      <div class="grid">
-        <div class="card">
-          <!-- Clique diretamente no player para iniciar -->
-          <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="WFfK2Dz2DdU"></div>
-          <p class="note">Dê play no player e assista ao menos ~30s. Este monitor registra eventos e tempo assistido localmente, para comparação com o YouTube Studio.</p>
-        </div>
-        <div class="card">
-          <strong>Logs em tempo real</strong>
-          <div id="logs" class="logbox" aria-live="polite"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Plyr JS (polyfilled) -->
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script>
-      // Inicialização: sem autoplay (padrão). O usuário precisa clicar no player.
-      const player = new Plyr('#player', {
-        controls: [
-          'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
-          'settings', 'pip', 'airplay', 'fullscreen'
-        ],
-        youtube: { rel: 0, modestbranding: 1 }
-      });
-
-      window.player = player; // para debug no console
-
-      // ==== Monitoramento simples de eventos + tempo assistido ====
-      const logs = document.getElementById('logs');
-      const qualif = document.getElementById('qualif');
-      let watchedSeconds = 0;
-      let lastT = null; // última posição de tempo conhecida (segundos)
-      let qualified = false;
-
-      function log(msg, obj) {
-        const line = document.createElement('div');
-        const ts = new Date().toLocaleTimeString();
-        line.textContent = `[${ts}] ${msg}`;
-        logs.prepend(line);
-        if (obj) console.log(msg, obj);
-      }
-
-      function updateQualification() {
-        if (!qualified && watchedSeconds >= 30) {
-          qualified = true;
-          qualif.textContent = '≥ 30s: alcançado!';
-          qualif.classList.add('ok');
-          log('✅ QUALIFIED_VIEW_30S alcançado (30s acumulados).');
-        } else {
-          qualif.textContent = `≥ 30s: ${Math.floor(watchedSeconds)}s`; 
-        }
-      }
-
-      // Eventos úteis do Plyr
-      const events = ['ready', 'play', 'pause', 'seeking', 'seeked', 'timeupdate', 'ended', 'enterfullscreen', 'exitfullscreen'];
-      events.forEach(e => player.on(e, (ev) => {
-        if (e !== 'timeupdate') log(`Evento: ${e}`);
-      }));
-
-      // Acúmulo simples de tempo assistido quando está tocando
-      player.on('timeupdate', () => {
-        const t = player.currentTime || 0;
-        if (player.playing && lastT != null) {
-          let delta = t - lastT;
-          if (delta > 0 && delta < 4) { // ignora saltos grandes (seek) e ruído
-            watchedSeconds += delta;
-            updateQualification();
-          }
-        }
-        lastT = t;
-      });
-
-      // Reinicializa marcador ao dar play
-      player.on('play', () => { lastT = player.currentTime || 0; });
-
-      // Ajuste em mudanças de visibilidade (aba oculta)
-      document.addEventListener('visibilitychange', () => {
-        log(`visibilitychange: ${document.visibilityState}`);
-      });
-
-      log('Monitor ativo. Clique no ▶️ do player.');
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
