@@ -1,55 +1,54 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Teste Plyr - YouTube (sem autoplay)</title>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plyr com post-roll (YouTube)</title>
 
-    <!-- Plyr CSS -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <!-- CSS do Plyr -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+</head>
+<body style="background:#111; display:flex; align-items:center; justify-content:center; height:100vh;">
 
-    <style>
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-        margin: 0; padding: 2rem; background: #0f172a; color: #e2e8f0;
-        display: grid; place-items: center; min-height: 100vh;
+  <div class="plyr__video-embed" id="player" style="width:80%; max-width:900px;">
+    <iframe
+      src="https://www.youtube.com/embed/0pdqf4P9MB8?origin=*&playsinline=1"
+      allowfullscreen
+      allow="autoplay"
+    ></iframe>
+  </div>
+
+  <!-- JS do Plyr -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script>
+    // cria o player
+    const player = new Plyr('#player', { youtube: { rel: 0, modestbranding: 1 } });
+
+    // IDs dos vídeos (YouTube)
+    const videos = [
+      '0pdqf4P9MB8', // principal
+      '_lwMF0F_Amw'  // "ad"
+    ];
+
+    let currentIndex = 0;
+
+    // quando o vídeo atual terminar, troca para o próximo
+    player.on('ended', () => {
+      currentIndex++;
+      if (currentIndex < videos.length) {
+        const nextId = videos[currentIndex];
+        player.source = {
+          type: 'video',
+          sources: [{
+            src: nextId,
+            provider: 'youtube'
+          }]
+        };
+        player.play();
+      } else {
+        console.log('Todos os vídeos terminaram');
       }
-      .wrap { width: min(900px, 95vw); }
-      h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem; opacity: .9; }
-      .card {
-        background: #111827; border-radius: 16px; padding: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.25);
-        border: 1px solid rgba(255,255,255,.06);
-      }
-      .note { font-size: .9rem; opacity: .8; margin-top: .75rem; }
-      a { color: #93c5fd; }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <h1>Teste de contagem de views no YouTube via Plyr (sem autoplay)</h1>
-      <div class="card">
-        <!-- Clique diretamente no player para iniciar -->
-        <div id="player" data-plyr-provider="youtube" data-plyr-embed-id="WFfK2Dz2DdU"></div>
-        <p class="note">Dê play diretamente no player e assista pelo menos ~30s para validar a contagem no YouTube.</p>
-      </div>
-    </div>
-
-    <!-- Plyr JS (polyfilled) -->
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
-    <script>
-      // Inicialização: sem autoplay (padrão). O usuário precisa clicar no player.
-      const player = new Plyr('#player', {
-        controls: [
-          'play-large', 'play', 'progress', 'current-time', 'mute', 'volume',
-          'settings', 'pip', 'airplay', 'fullscreen'
-        ],
-        youtube: {
-          rel: 0,
-          modestbranding: 1
-        }
-      });
-
-      window.player = player; // para debug no console
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
