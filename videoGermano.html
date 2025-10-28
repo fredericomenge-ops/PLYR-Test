@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Plyr com post-roll travado (YouTube)</title>
-
-  <!-- CSS do Plyr -->
+  <title>Plyr com loop de fila (YouTube)</title>
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-
   <style>
     body {
       background: #111;
@@ -16,8 +13,6 @@
       justify-content: center;
       height: 100vh;
     }
-
-    /* Player fixo */
     #player {
       width: 960px;
       height: 540px;
@@ -26,106 +21,61 @@
       overflow: hidden;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     }
-
-    #player iframe {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Cor do player */
     :root {
       --plyr-color-main: #25B895;
-    }
-
-    /* Overlay para travar clique durante anúncio */
-    .overlay-lock {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-      background: rgba(0, 0, 0, 0);
-      display: none;
     }
   </style>
 </head>
 <body>
 
-  <div style="position: relative;">
-    <div class="plyr__video-embed" id="player">
-      <iframe
-        src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
-        allowfullscreen
-        allow="autoplay"
-      ></iframe>
-    </div>
-    <div id="lock" class="overlay-lock"></div>
+  <div class="plyr__video-embed" id="player">
+    <iframe
+      src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
+      allowfullscreen
+      allow="autoplay"
+    ></iframe>
   </div>
 
-  <!-- JS do Plyr -->
   <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
   <script>
     const player = new Plyr('#player', {
       youtube: { rel: 0, modestbranding: 1 },
-      autoplay: true,
+      autoplay: false, // sem autoplay inicial
     });
 
     const videos = [
-      { id: '0pdqf4P9MB8', title: 'Conteúdo principal' },
-      { id: '_lwMF0F_Amw', title: 'Anúncio' },
+      '0pdqf4P9MB8',
+      '_lwMF0F_Amw'
     ];
 
     let currentIndex = 0;
     let isChanging = false;
-    const lockOverlay = document.getElementById('lock');
 
-    // Função para trocar de vídeo
-    function loadVideo(index) {
-      const next = videos[index];
-      if (!next) return;
+    player.on('ended', async () => {
+      if (isChanging) return;
+
+      currentIndex++;
+      if (currentIndex >= videos.length) {
+        currentIndex = 0; // volta pro primeiro
+      }
 
       isChanging = true;
-      player.source = {
-        type: 'video',
-        sources: [{ src: next.id, provider: 'youtube' }],
-        title: next.title,
-      };
+      const nextId = videos[currentIndex];
 
-      // Aguarda o player estar pronto antes de tocar
-      player.once('ready', () => {
-        player.muted = true;
-        player.play().then(() => {
-          player.muted = false;
-          isChanging = false;
+      try {
+        player.source = {
+          type: 'video',
+          sources: [{ src: nextId, provider: 'youtube' }],
+        };
 
-          // Se for o anúncio, só depois do "ready" aplica bloqueio
-          if (index === 1) {
-            lockOverlay.style.display = 'block';
-            player.toggleControls(false);
-          } else {
-            lockOverlay.style.display = 'none';
-            player.toggleControls(true);
-          }
-        }).catch(err => {
-          console.warn('Autoplay bloqueado:', err);
-          isChanging = false;
-        });
-      });
-    }
-
-    // Quando o vídeo termina
-    player.on('ended', () => {
-      if (isChanging) return;
-      currentIndex++;
-      if (currentIndex < videos.length) {
-        loadVideo(currentIndex);
-      } else {
-        console.log('Todos os vídeos concluídos.');
-        lockOverlay.style.display = 'none';
-        player.toggleControls(true);
+        await new Promise(resolve => player.once('ready', resolve));
+        await player.play();
+      } catch (err) {
+        console.warn('Erro ao trocar vídeo:', err);
+      } finally {
+        isChanging = false;
       }
     });
-
-    // Inicializa o primeiro vídeo
-    loadVideo(currentIndex);
   </script>
 </body>
 </html>
