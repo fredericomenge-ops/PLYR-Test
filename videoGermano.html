@@ -37,12 +37,13 @@
       --plyr-color-main: #25B895;
     }
 
-    /* Overlay opcional para bloquear clique */
+    /* Overlay para travar clique durante anúncio */
     .overlay-lock {
       position: absolute;
       inset: 0;
       z-index: 10;
       background: rgba(0, 0, 0, 0);
+      display: none;
     }
   </style>
 </head>
@@ -56,7 +57,7 @@
         allow="autoplay"
       ></iframe>
     </div>
-    <div id="lock" class="overlay-lock" style="display:none;"></div>
+    <div id="lock" class="overlay-lock"></div>
   </div>
 
   <!-- JS do Plyr -->
@@ -65,7 +66,6 @@
     const player = new Plyr('#player', {
       youtube: { rel: 0, modestbranding: 1 },
       autoplay: true,
-      muted: false,
     });
 
     const videos = [
@@ -77,8 +77,8 @@
     let isChanging = false;
     const lockOverlay = document.getElementById('lock');
 
-    // Função auxiliar: troca de vídeo
-    function loadVideo(index, autoplay = true) {
+    // Função para trocar de vídeo
+    function loadVideo(index) {
       const next = videos[index];
       if (!next) return;
 
@@ -89,26 +89,25 @@
         title: next.title,
       };
 
+      // Aguarda o player estar pronto antes de tocar
       player.once('ready', () => {
-        // autoplay confiável
         player.muted = true;
-        if (autoplay) {
-          player.play().then(() => {
-            player.muted = false;
-            isChanging = false;
-          }).catch(() => {
-            isChanging = false;
-          });
-        }
+        player.play().then(() => {
+          player.muted = false;
+          isChanging = false;
 
-        // Se for o segundo vídeo (anúncio), bloqueia pause
-        if (index === 1) {
-          lockOverlay.style.display = 'block';
-          player.toggleControls(false);
-        } else {
-          lockOverlay.style.display = 'none';
-          player.toggleControls(true);
-        }
+          // Se for o anúncio, só depois do "ready" aplica bloqueio
+          if (index === 1) {
+            lockOverlay.style.display = 'block';
+            player.toggleControls(false);
+          } else {
+            lockOverlay.style.display = 'none';
+            player.toggleControls(true);
+          }
+        }).catch(err => {
+          console.warn('Autoplay bloqueado:', err);
+          isChanging = false;
+        });
       });
     }
 
@@ -125,7 +124,7 @@
       }
     });
 
-    // Inicializa
+    // Inicializa o primeiro vídeo
     loadVideo(currentIndex);
   </script>
 </body>
