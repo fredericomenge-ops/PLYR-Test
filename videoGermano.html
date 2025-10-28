@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Plyr com post-roll (YouTube)</title>
+  <title>Plyr com post-roll travado (YouTube)</title>
 
   <!-- CSS do Plyr -->
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
@@ -17,36 +17,46 @@
       height: 100vh;
     }
 
-    /* Contêiner fixo do player */
+    /* Player fixo */
     #player {
-      width: 960px;     /* largura fixa */
-      height: 540px;    /* altura fixa (16:9 padrão) */
+      width: 960px;
+      height: 540px;
       background: black;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     }
 
-    /* Força o iframe a ocupar o contêiner */
     #player iframe {
       width: 100%;
       height: 100%;
     }
 
-    /* Cor principal do player */
+    /* Cor do player */
     :root {
-      --plyr-color-main: #25B895; /* verde BP */
+      --plyr-color-main: #25B895;
+    }
+
+    /* Overlay opcional para bloquear clique */
+    .overlay-lock {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0);
     }
   </style>
 </head>
 <body>
 
-  <div class="plyr__video-embed" id="player">
-    <iframe
-      src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
-      allowfullscreen
-      allow="autoplay"
-    ></iframe>
+  <div style="position: relative;">
+    <div class="plyr__video-embed" id="player">
+      <iframe
+        src="https://www.youtube.com/embed/0pdqf4P9MB8?playsinline=1&enablejsapi=1"
+        allowfullscreen
+        allow="autoplay"
+      ></iframe>
+    </div>
+    <div id="lock" class="overlay-lock" style="display:none;"></div>
   </div>
 
   <!-- JS do Plyr -->
@@ -59,41 +69,64 @@
     });
 
     const videos = [
-      '0pdqf4P9MB8', // vídeo principal
-      '_lwMF0F_Amw'  // anúncio
+      { id: '0pdqf4P9MB8', title: 'Conteúdo principal' },
+      { id: '_lwMF0F_Amw', title: 'Anúncio' },
     ];
 
     let currentIndex = 0;
     let isChanging = false;
+    const lockOverlay = document.getElementById('lock');
 
+    // Função auxiliar: troca de vídeo
+    function loadVideo(index, autoplay = true) {
+      const next = videos[index];
+      if (!next) return;
+
+      isChanging = true;
+      player.source = {
+        type: 'video',
+        sources: [{ src: next.id, provider: 'youtube' }],
+        title: next.title,
+      };
+
+      player.once('ready', () => {
+        // autoplay confiável
+        player.muted = true;
+        if (autoplay) {
+          player.play().then(() => {
+            player.muted = false;
+            isChanging = false;
+          }).catch(() => {
+            isChanging = false;
+          });
+        }
+
+        // Se for o segundo vídeo (anúncio), bloqueia pause
+        if (index === 1) {
+          lockOverlay.style.display = 'block';
+          player.toggleControls(false);
+        } else {
+          lockOverlay.style.display = 'none';
+          player.toggleControls(true);
+        }
+      });
+    }
+
+    // Quando o vídeo termina
     player.on('ended', () => {
       if (isChanging) return;
       currentIndex++;
       if (currentIndex < videos.length) {
-        isChanging = true;
-        const nextId = videos[currentIndex];
-
-        // troca a fonte do vídeo
-        player.source = {
-          type: 'video',
-          sources: [{ src: nextId, provider: 'youtube' }]
-        };
-
-        // aguarda estar pronto e dá play
-        player.once('ready', () => {
-          player.muted = true;
-          player.play().then(() => {
-            player.muted = false;
-            isChanging = false;
-          }).catch(err => {
-            console.warn('Autoplay bloqueado:', err);
-            isChanging = false;
-          });
-        });
+        loadVideo(currentIndex);
       } else {
         console.log('Todos os vídeos concluídos.');
+        lockOverlay.style.display = 'none';
+        player.toggleControls(true);
       }
     });
+
+    // Inicializa
+    loadVideo(currentIndex);
   </script>
 </body>
 </html>
